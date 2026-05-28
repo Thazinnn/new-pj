@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Music Player</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: radial-gradient(circle at 50% 30%, #1f1f2e 0%, #0a0a14 70%);
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    opacity: 0.95;
+  }
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff0040 0%, #ff4081 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 18px rgba(255, 0, 64, 0.4);
+  }
+  .logo-icon svg { width: 18px; height: 18px; fill: #fff; }
+  .player-wrap {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pulse {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,64,129,0.35) 0%, rgba(255,64,129,0) 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .playing .pulse {
+    opacity: 1;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.15); opacity: 0.2; }
+  }
+  .play-btn {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #ff0040 0%, #ff4081 100%);
+    box-shadow: 0 12px 40px rgba(255, 0, 64, 0.45),
+                inset 0 -4px 12px rgba(0,0,0,0.2),
+                inset 0 4px 12px rgba(255,255,255,0.15);
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .play-btn:hover { transform: scale(1.05); }
+  .play-btn:active { transform: scale(0.97); }
+  .play-btn svg { width: 56px; height: 56px; fill: #fff; }
+  .play-btn .pause-icon { display: none; }
+  .playing .play-btn .play-icon { display: none; }
+  .playing .play-btn .pause-icon { display: block; }
+  .track-title {
+    font-size: 14px;
+    opacity: 0.6;
+    letter-spacing: 0.3px;
+  }
+  #yt-player {
+    position: fixed;
+    bottom: -10px;
+    right: -10px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <div class="logo">
+    <span class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+    </span>
+    <span>Music</span>
+  </div>
+
+  <div class="player-wrap" id="playerWrap">
+    <div class="pulse"></div>
+    <button class="play-btn" id="playBtn" aria-label="Play">
+      <svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      <svg class="pause-icon" viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+    </button>
+  </div>
+
+  <div class="track-title" id="trackTitle">Loading…</div>
+
+  <div id="yt-player"></div>
+
+  <script>
+    const VIDEO_ID = 'dTvgQ7-jPYk';
+    let player;
+    let isReady = false;
+    let isPlaying = false;
+
+    const wrap = document.getElementById('playerWrap');
+    const btn = document.getElementById('playBtn');
+    const title = document.getElementById('trackTitle');
+
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('yt-player', {
+        height: '1',
+        width: '1',
+        videoId: VIDEO_ID,
+        playerVars: { playsinline: 1, controls: 0 },
+        events: {
+          onReady: () => {
+            isReady = true;
+            const data = player.getVideoData();
+            title.textContent = data.title || 'Tap to play';
+          },
+          onStateChange: (e) => {
+            if (e.data === YT.PlayerState.PLAYING) {
+              isPlaying = true;
+              wrap.classList.add('playing');
+              btn.setAttribute('aria-label', 'Pause');
+            } else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) {
+              isPlaying = false;
+              wrap.classList.remove('playing');
+              btn.setAttribute('aria-label', 'Play');
+            }
+          }
+        }
+      });
+    }
+    window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+
+    btn.addEventListener('click', () => {
+      if (!isReady) return;
+      if (isPlaying) player.pauseVideo();
+      else player.playVideo();
+    });
+  </script>
+</body>
+</html>
