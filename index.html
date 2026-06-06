@@ -85,6 +85,28 @@
   .play-btn:hover { transform: scale(1.05); }
   .play-btn:active { transform: scale(0.97); }
   .play-btn svg { width: 56px; height: 56px; fill: #fff; }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+  .nav-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    transition: transform 0.15s ease, background 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-btn:hover { transform: scale(1.08); background: rgba(255,255,255,0.16); }
+  .nav-btn:active { transform: scale(0.94); }
+  .nav-btn svg { width: 26px; height: 26px; fill: #fff; }
   .play-btn .pause-icon { display: none; }
   .playing .play-btn .play-icon { display: none; }
   .playing .play-btn .pause-icon { display: block; }
@@ -112,11 +134,21 @@
     <span>Music</span>
   </div>
 
-  <div class="player-wrap" id="playerWrap">
-    <div class="pulse"></div>
-    <button class="play-btn" id="playBtn" aria-label="Play">
-      <svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-      <svg class="pause-icon" viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+  <div class="controls">
+    <button class="nav-btn" id="backBtn" aria-label="Back">
+      <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+    </button>
+
+    <div class="player-wrap" id="playerWrap">
+      <div class="pulse"></div>
+      <button class="play-btn" id="playBtn" aria-label="Play">
+        <svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <svg class="pause-icon" viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+      </button>
+    </div>
+
+    <button class="nav-btn" id="nextBtn" aria-label="Next">
+      <svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zm-2.5 6L5 6v12z"/></svg>
     </button>
   </div>
 
@@ -135,10 +167,20 @@
     let player;
     let isReady = false;
     let isPlaying = false;
+    let currentIndex = 0;
+    let history = [];
 
     const wrap = document.getElementById('playerWrap');
     const btn = document.getElementById('playBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const backBtn = document.getElementById('backBtn');
     const title = document.getElementById('trackTitle');
+
+    function playIndex(i) {
+      if (!isReady) return;
+      currentIndex = (i % PLAYLIST.length + PLAYLIST.length) % PLAYLIST.length;
+      player.loadVideoById(PLAYLIST[currentIndex]);
+    }
 
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
@@ -163,6 +205,9 @@
               btn.setAttribute('aria-label', 'Pause');
               const d = player.getVideoData();
               title.textContent = d.title || 'Playing…';
+              if (history[history.length - 1] !== currentIndex) {
+                history.push(currentIndex);
+              }
             } else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) {
               isPlaying = false;
               wrap.classList.remove('playing');
@@ -178,6 +223,24 @@
       if (!isReady) return;
       if (isPlaying) player.pauseVideo();
       else player.playVideo();
+    });
+
+    nextBtn.addEventListener('click', () => {
+      playIndex(currentIndex + 1);
+    });
+
+    backBtn.addEventListener('click', () => {
+      if (!isReady) return;
+      // previous played song repeats: pop current, replay one before it
+      if (history.length >= 2) {
+        history.pop();                       // drop current
+        const prev = history.pop();          // previous played (re-pushed on play)
+        playIndex(prev);
+      } else {
+        // no earlier song: restart current
+        player.seekTo(0);
+        player.playVideo();
+      }
     });
   </script>
 </body>
