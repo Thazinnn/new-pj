@@ -125,7 +125,13 @@
   <div id="yt-player"></div>
 
   <script>
-    const VIDEO_ID = 'dTvgQ7-jPYk';
+    const PLAYLIST = [
+      'dTvgQ7-jPYk',
+      '5NU8IC5RJcM',
+      'hD7vrP2yCqI',
+      'oDRvdPUIiog',
+      '-89ouCz4wm0'
+    ];
     let player;
     let isReady = false;
     let isPlaying = false;
@@ -142,8 +148,8 @@
       player = new YT.Player('yt-player', {
         height: '1',
         width: '1',
-        videoId: VIDEO_ID,
-        playerVars: { playsinline: 1, controls: 0 },
+        videoId: PLAYLIST[0],
+        playerVars: { playsinline: 1, controls: 0, playlist: PLAYLIST.slice(1).join(',') },
         events: {
           onReady: () => {
             isReady = true;
@@ -155,6 +161,8 @@
               isPlaying = true;
               wrap.classList.add('playing');
               btn.setAttribute('aria-label', 'Pause');
+              const d = player.getVideoData();
+              title.textContent = d.title || 'Playing…';
             } else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) {
               isPlaying = false;
               wrap.classList.remove('playing');
